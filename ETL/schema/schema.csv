@@ -9,10 +9,9 @@ function,first_test_result_by_date_entered
 function,latest_test_result_by_date_entered
 function,get_regimen
 function,get_regimen_start
-procedure,age_group
-procedure,create_age_groups_for_tpt
+procedure,create_age_groups
 procedure,create_changed_regimen_list
-procedure,create hiv cohort
+procedure,create_hiv_cohort
 procedure,create_last_art_outcome_at_facility
 procedure,create_moh_cohort_disaggregated
 procedure,create_moh_cohort_disaggregated_generic
