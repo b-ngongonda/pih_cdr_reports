@@ -90,7 +90,7 @@ COUNT(IF(cd4_count < 200 and (
     , 1, NULL)) as transfer_ins
 from
 (
-select distinct(mwp.patient_id), opi.identifier, mwp.first_name, mwp.last_name, ops.program, ops.state,ops.start_date,program_state_id,  mwp.gender,
+select distinct(mwp.patient_id), opi.identifier, ops.program, ops.state,ops.start_date,program_state_id,  mwp.gender,
  If(ops.state = "On antiretrovirals",floor(datediff(@endDate,mwp.birthdate)/@birthDateDivider),floor(datediff(ops.start_date,mwp.birthdate)/@birthDateDivider)) as age,
  ops.location,  patient_initial_visit.initial_visit_date, patient_initial_visit.transfer_in_date, cd4_count
 from  mw_patient mwp

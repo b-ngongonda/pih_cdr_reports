@@ -136,7 +136,7 @@ END as age_group,gender,
     , 1, NULL)) as tb_rx_prev
 from
 (
-select distinct(mwp.patient_id), opi.identifier, mwp.first_name, mwp.last_name, ops.program, ops.state,ops.start_date,program_state_id,  mwp.gender,
+select distinct(mwp.patient_id), opi.identifier, ops.program, ops.state,ops.start_date,program_state_id,  mwp.gender,
  If(ops.state = "On antiretrovirals",floor(datediff(@endDate,mwp.birthdate)/@birthDateDivider),floor(datediff(ops.start_date,mwp.birthdate)/@birthDateDivider)) as age,
  ops.location, patient_visit.last_appt_date, patient_visit.followup_visit_date, patient_initial_visit.initial_visit_date,
  patient_initial_visit.transfer_in_date, tb_status

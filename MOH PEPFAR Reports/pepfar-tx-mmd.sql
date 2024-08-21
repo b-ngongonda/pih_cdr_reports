@@ -61,7 +61,7 @@ COUNT(IF((days_diff BETWEEN 80 and 168), 1, NULL)) as three_to_five_months,
 COUNT(IF((days_diff > 168), 1, NULL)) as six_months_plus
 from
 (
-select map.patient_id,mwp.first_name, mwp.last_name,mwp.gender,floor(datediff(@endDate,mwp.birthdate)/@birthDateDivider) as age, map.visit_date,
+select map.patient_id,mwp.gender,floor(datediff(@endDate,mwp.birthdate)/@birthDateDivider) as age, map.visit_date,
  map.next_appointment_date as next_appt_date, map.art_regimen, map.arvs_given, datediff(map.next_appointment_date,map.visit_date) as days_diff
     from mw_art_followup map
 join

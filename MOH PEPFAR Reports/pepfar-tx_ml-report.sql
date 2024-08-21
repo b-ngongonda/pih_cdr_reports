@@ -1,9 +1,8 @@
-
 /* 30 for age in months*/
 SET @birthDateDivider = 30;
---SET @location = "Neno District Hospital";
---SET @startDate = "2020-01-01";
---SET @endDate = "2021-06-30";
+SET @location = "Neno District Hospital";
+SET @startDate = "2020-01-01";
+SET @endDate = "2021-06-30";
 SET @defaultCutOff = 30;
 
 call create_age_groups();
@@ -83,7 +82,7 @@ END as age_group,gender as "gender",
      COUNT(IF((state = 'Patient transferred out' and start_date BETWEEN @startDate AND @endDate), 1, NULL)) as patient_transferred_out
 from
 (
-select distinct(mwp.patient_id), opi.identifier, mwp.first_name, mwp.last_name, ops.program, ops.state,ops.start_date,program_state_id,  mwp.gender,
+select distinct(mwp.patient_id), opi.identifier, ops.program, ops.state,ops.start_date,program_state_id,  mwp.gender,
  If(ops.state = "On antiretrovirals",floor(datediff(@endDate,mwp.birthdate)/@birthDateDivider),floor(datediff(ops.start_date,mwp.birthdate)/@birthDateDivider)) as age,
  ops.location, patient_visit.last_appt_date
 from  mw_patient mwp
