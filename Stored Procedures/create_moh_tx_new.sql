@@ -8,7 +8,7 @@ call create_last_art_outcome_at_facility(_endDate,_location);
 insert into moh_tx_new(sort_value,age_group,gender,tx_new_cd4_less_than_two_hundred,
 tx_new_cd4_equal_to_or_greater_than_two_hundred, tx_new_cd4_equal_unknown_or_not_done, transfer_ins)
 
-select sort_value,x.age_group, x.gender,
+select sort_value,x.age_group,CASE WHEN x.gender = "F" THEN "Female" ELSE "Male" END as gender,
 CASE WHEN tx_new_cd4_less_than_two_hundred is null then 0 else tx_new_cd4_less_than_two_hundred end as tx_new_cd4_less_than_two_hundred,
 CASE WHEN tx_new_cd4_equal_to_or_greater_than_two_hundred is null then 0 else tx_new_cd4_equal_to_or_greater_than_two_hundred end as  tx_new_cd4_equal_to_or_greater_than_two_hundred,
 CASE WHEN tx_new_cd4_equal_unknown_or_not_done is null then 0 else tx_new_cd4_equal_unknown_or_not_done end as tx_new_cd4_equal_unknown_or_not_done,

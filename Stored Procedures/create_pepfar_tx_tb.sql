@@ -1,18 +1,24 @@
-CREATE PROCEDURE `create_pepfar_tx_new`(IN _startDate DATE,IN _endDate DATE, IN _location VARCHAR(255),IN _defaultCutOff INT,IN _birthDateDivider INT)
+CREATE PROCEDURE `create_pepfar_tx_tb`(IN _startDate DATE,IN _endDate DATE, IN _location VARCHAR(255),IN _defaultCutOff INT,IN _birthDateDivider INT)
 BEGIN
 
-
 call create_age_groups();
-call create_last_art_outcome_at_facility(_endDate,_location);
+call create_last_art_outcome_at_facility(@endDate,@location);
+call create_hiv_cohort(@startDate,@endDate,@location,@birthDateDivider);
 
-insert into pepfar_tx_new(sort_value,age_group,gender,tx_new_cd4_less_than_two_hundred,
-tx_new_cd4_equal_to_or_greater_than_two_hundred, tx_new_cd4_equal_unknown_or_not_done, transfer_ins)
+insert into pepfar_tx_tb(sort_value,age_group,gender,tx_curr,symptom_screen_alone,cxr_screen,mwrd_screen,
+screened_for_tb_tx_new_pos,screened_for_tb_tx_new_neg,screened_for_tb_tx_prev_pos,screened_for_tb_tx_prev_neg,tb_rx_new,tb_rx_prev)
 
 select sort_value,x.age_group, CASE WHEN x.gender = "F" THEN "Female" ELSE "Male" END as gender,
-CASE WHEN tx_new_cd4_less_than_two_hundred is null then 0 else tx_new_cd4_less_than_two_hundred end as tx_new_cd4_less_than_two_hundred,
-CASE WHEN tx_new_cd4_equal_to_or_greater_than_two_hundred is null then 0 else tx_new_cd4_equal_to_or_greater_than_two_hundred end as  tx_new_cd4_equal_to_or_greater_than_two_hundred,
-CASE WHEN tx_new_cd4_equal_unknown_or_not_done is null then 0 else tx_new_cd4_equal_unknown_or_not_done end as tx_new_cd4_equal_unknown_or_not_done,
-CASE WHEN transfer_ins is null then 0 else transfer_ins end as transfer_ins
+CASE WHEN tx_curr is null then 0 else tx_curr end as tx_curr,
+CASE WHEN symptom_screen_alone is null then 0 else symptom_screen_alone end as symptom_screen_alone,
+"0" as cxr_screen,
+"0" as mwrd_screen,
+CASE WHEN screened_for_tb_tx_new_pos is null then 0 else screened_for_tb_tx_new_pos end as screened_for_tb_tx_new_pos,
+CASE WHEN screened_for_tb_tx_new_neg is null then 0 else screened_for_tb_tx_new_neg end as  screened_for_tb_tx_new_neg,
+CASE WHEN screened_for_tb_tx_prev_pos is null then 0 else screened_for_tb_tx_prev_pos end as screened_for_tb_tx_prev_pos,
+CASE WHEN screened_for_tb_tx_prev_neg is null then 0 else screened_for_tb_tx_prev_neg end as screened_for_tb_tx_prev_neg,
+CASE WHEN tb_rx_new is null then 0 else tb_rx_new end as tb_rx_new,
+CASE WHEN tb_rx_prev is null then 0 else tb_rx_prev end as tb_rx_prev
  from
 age_groups as x
 LEFT OUTER JOIN
@@ -60,67 +66,60 @@ WHEN age >=1020 and age<=1079 and gender = "F" THEN "85-89 years"
 WHEN age >=1080 and gender = "M" THEN "90 plus years"
 WHEN age >=1080 and gender = "F" THEN "90 plus years"
 END as age_group,gender,
-COUNT(IF(cd4_count < 200 and (
+    COUNT(IF((state = 'On antiretrovirals' and floor(datediff(@endDate,last_appt_date)) <=  @defaultOneMonth), 1, NULL)) as tx_curr,
+    COUNT(if(tb_status in ("TB suspected","TB NOT suspected","Confirmed TB on treatment","Confirmed TB NOT on treatment"),1,NULL)) as symptom_screen_alone,
+    COUNT(IF(tb_status = "TB suspected" and (
     initial_visit_date BETWEEN @startDate AND @endDate and transfer_in_date is null and patient_id NOT IN (
 	select patient_id from omrs_patient_identifier where type = "ARV Number" and location != @location)
     and patient_id IN(select patient_id from omrs_patient_identifier where type = "ARV Number" and location = @location
     ))
-    , 1, NULL)) as tx_new_cd4_less_than_two_hundred,
-    
-    COUNT(IF(cd4_count >= 200 and (
+    , 1, NULL)) as screened_for_tb_tx_new_pos,
+    COUNT(IF(tb_status = "TB NOT suspected" and (
     initial_visit_date BETWEEN @startDate AND @endDate and transfer_in_date is null and patient_id NOT IN (
 	select patient_id from omrs_patient_identifier where type = "ARV Number" and location != @location)
     and patient_id IN(select patient_id from omrs_patient_identifier where type = "ARV Number" and location = @location
     ))
-    , 1, NULL)) as tx_new_cd4_equal_to_or_greater_than_two_hundred,
-    
-	COUNT(IF(cd4_count is null and (
-    initial_visit_date BETWEEN @startDate AND @endDate and transfer_in_date is null and patient_id NOT IN (
-	select patient_id from omrs_patient_identifier where type = "ARV Number" and location != @location)
-    and patient_id IN(select patient_id from omrs_patient_identifier where type = "ARV Number" and location = @location
-    ))
-    , 1, NULL)) as tx_new_cd4_equal_unknown_or_not_done,
-
-    COUNT(IF(transfer_in_date is not null
+    , 1, NULL)) as screened_for_tb_tx_new_neg,
+    COUNT(IF(tb_status = "TB suspected"
+    and
+    initial_visit_date < @startDate
+    , 1, NULL)) as screened_for_tb_tx_prev_pos,
+    COUNT(IF(tb_status = "TB NOT suspected"
+    and
+    initial_visit_date < @startDate
+    , 1, NULL)) as screened_for_tb_tx_prev_neg,
+    COUNT(IF(tb_status = "Confirmed TB on treatment"
     and (
-    initial_visit_date BETWEEN @startDate AND @endDate and patient_id NOT IN (
+    initial_visit_date BETWEEN @startDate AND @endDate and transfer_in_date is null and patient_id NOT IN (
 	select patient_id from omrs_patient_identifier where type = "ARV Number" and location != @location)
     and patient_id IN(select patient_id from omrs_patient_identifier where type = "ARV Number" and location = @location
     ))
-    , 1, NULL)) as transfer_ins
+    , 1, NULL)) as tb_rx_new,
+    COUNT(IF(tb_status = "Confirmed TB NOT on treatment"
+    and (
+    initial_visit_date < @startDate
+    )
+    , 1, NULL)) as tb_rx_prev
 from
 (
-select distinct(mwp.patient_id), opi.identifier, ops.program, ops.state,ops.start_date,program_state_id,  mwp.gender,
+select distinct(mwp.patient_id), opi.identifier, mwp.first_name, mwp.last_name, ops.program, ops.state,ops.start_date,program_state_id,  mwp.gender,
  If(ops.state = "On antiretrovirals",floor(datediff(@endDate,mwp.birthdate)/@birthDateDivider),floor(datediff(ops.start_date,mwp.birthdate)/@birthDateDivider)) as age,
- ops.location,  patient_initial_visit.initial_visit_date, patient_initial_visit.transfer_in_date, cd4_count
-from  mw_patient mwp
-
-LEFT join (
-	select mar.patient_id, cd4_count, mar.visit_date as initial_visit_date,
-    mar.pregnant_or_lactating as initial_pregnant_or_lactating, mar.transfer_in_date
-    from mw_art_initial mar
-join
-(
-	select patient_id,MAX(visit_date) as visit_date  from mw_art_initial where visit_date <= @endDate
-	group by patient_id
-	) mar1
-ON mar.patient_id = mar1.patient_id and mar.visit_date = mar1.visit_date) patient_initial_visit
-            on patient_initial_visit.patient_id = mwp.patient_id
-join omrs_patient_identifier opi
-on mwp.patient_id = opi.patient_id
-
+ ops.location, last_appt_date, followup_visit_date, initial_visit_date,
+ hc.transfer_in_date, tb_status
+ from hiv_cohort hc
+ join mw_patient mwp on hc.patient_id= mwp.patient_id
+ join omrs_patient_identifier opi
+ on mwp.patient_id = opi.patient_id
 
 JOIN
          last_facility_outcome as ops
             on opi.patient_id = ops.pat and opi.location = ops.location
             where opi.type = "ARV Number"
-            
-
 )sub1
-
  group by age_group,gender, location
  order by gender,age_group,location, state
  ) cohort on x.age_group = cohort.age_group
  and x.gender = cohort.gender
  order by sort_value;
+
 END
