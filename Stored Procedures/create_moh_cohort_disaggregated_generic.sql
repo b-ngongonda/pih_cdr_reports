@@ -6,7 +6,7 @@ call create_hiv_cohort(_startDate,_endDate,_location,_birthDateDivider);
 
 insert into moh_cohort_disaggregated(age_group,gender,tx_curr,
 0A,2A,4A,5A,6A,7A,8A,9A,10A,11A,12A,13A,14A,15A,16A,17A,0P,2P,4PP,4PA,9PP,9PA,11PP,11PA,12PP,12PA,14PP,
-14PA,15PP,15PA,16P,17PP,17PA,non_standard)
+14PA,15P,15PP,15PA,16P,17PP,17PA,non_standard)
 
 SELECT "All" as age_group, _ageGroup as gender,
     COUNT(IF((state = 'On antiretrovirals' and floor(datediff(_endDate,last_appt_date)) <=  _defaultCutOff), 1, NULL)) as tx_curr,
@@ -38,6 +38,7 @@ COUNT(IF(state = 'On antiretrovirals' and floor(datediff(_endDate,last_appt_date
 COUNT(IF(state = 'On antiretrovirals' and floor(datediff(_endDate,last_appt_date)) <=  _defaultCutOff and current_regimen = "12PA: DRV 150 + r 50 + DTG 50", 1, NULL)) as 12PA,
 COUNT(IF(state = 'On antiretrovirals' and floor(datediff(_endDate,last_appt_date)) <=  _defaultCutOff and current_regimen = "14PP: AZT 60 / 3TC 30 + DTG 10", 1, NULL)) as 14PP,
 COUNT(IF(state = 'On antiretrovirals' and floor(datediff(_endDate,last_appt_date)) <=  _defaultCutOff and current_regimen = "14PA: AZT 60 / 3TC 30 + DTG 50", 1, NULL)) as 14PA,
+COUNT(IF(state = 'On antiretrovirals' and floor(datediff(_endDate,last_appt_date)) <=  _defaultCutOff and current_regimen = '15P: ABC / 3TC + DTG', 1, NULL)) as 15P,
 COUNT(IF(state = 'On antiretrovirals' and floor(datediff(_endDate,last_appt_date)) <=  _defaultCutOff and current_regimen = '15PP: ABC / 3TC + DTG', 1, NULL)) as 15PP,
 COUNT(IF(state = 'On antiretrovirals' and floor(datediff(_endDate,last_appt_date)) <=  _defaultCutOff and current_regimen = "15PA: ABC 120 / 3TC 60 + DTG 50", 1, NULL)) as 15PA,
 COUNT(IF(state = 'On antiretrovirals' and floor(datediff(_endDate,last_appt_date)) <=  _defaultCutOff and current_regimen = "16P: ABC / 3TC + RAL", 1, NULL)) as 16P,
